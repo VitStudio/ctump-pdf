@@ -32,9 +32,6 @@ from typing import Dict, List, Optional, Tuple, Callable
 from urllib.parse import parse_qs, urlencode, urlparse, urljoin
 from datetime import datetime
 
-# ------------------------- Web Framework (Flask) -------------------------
-from flask import Flask, render_template_string, request, jsonify, send_file, redirect, url_for
-
 # --------------------- Optional auto-install of deps --------------------
 def _ensure(pkgs: List[str]) -> None:
     import importlib, subprocess
@@ -46,6 +43,9 @@ def _ensure(pkgs: List[str]) -> None:
 
 # Install third-party deps if missing
 _ensure(["httpx[http2]>=0.26", "img2pdf>=0.6.0", "pikepdf>=9.0", "flask>=2.0.0"])
+
+# ------------------------- Web Framework (Flask) -------------------------
+from flask import Flask, render_template_string, request, jsonify, send_file, redirect, url_for
 
 import httpx
 import img2pdf

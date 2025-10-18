@@ -35,17 +35,28 @@ Công cụ chuyển đổi tài liệu từ CTUMP DocImage sang PDF với giao d
 
 ### Cài đặt
 ```bash
-# Clone hoặc tải file ct_gui.py
+# Clone hoặc tải file ct_gui.py (Desktop GUI) hoặc ctsample.py (Web UI)
 # Công cụ sẽ tự động cài đặt các thư viện cần thiết:
 # - httpx[http2]>=0.26
 # - img2pdf>=0.6.0  
 # - pikepdf>=9.0
+# - flask>=2.0.0 (chỉ cho ctsample.py)
 ```
 
 ### Chạy ứng dụng
+
+**Desktop GUI (Tkinter):**
 ```bash
 python ct_gui.py
 ```
+
+**Web Interface (Flask) - MỚI:**
+```bash
+python ctsample.py
+# Sau đó mở trình duyệt tại: http://localhost:5000
+```
+
+> 📝 **Lưu ý**: `ctsample.py` là phiên bản web UI mới, cho phép truy cập qua trình duyệt. Xem chi tiết trong [CTSAMPLE_README.md](CTSAMPLE_README.md)
 
 ## 📖 Hướng dẫn sử dụng
 
