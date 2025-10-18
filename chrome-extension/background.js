@@ -3,6 +3,40 @@
 
 console.log('CTUMP PDF Downloader service worker started');
 
+// Helper function to safely parse JSON responses with proper error logging
+async function safeJsonParse(response, context = '') {
+  const contentType = response.headers.get('content-type');
+  
+  // Log response details for debugging
+  console.log(`[${context}] Response status:`, response.status, response.statusText);
+  console.log(`[${context}] Content-Type:`, contentType);
+  
+  // Check if response is actually JSON
+  if (!contentType || !contentType.includes('application/json')) {
+    const text = await response.text();
+    console.error(`[${context}] Expected JSON but got:`, contentType);
+    console.error(`[${context}] Response body (first 500 chars):`, text.substring(0, 500));
+    
+    // Try to provide a helpful error message
+    if (text.includes('<!doctype') || text.includes('<!DOCTYPE')) {
+      throw new Error(`Server returned HTML instead of JSON. Is the API server running at the correct URL? Response: ${text.substring(0, 100)}...`);
+    } else {
+      throw new Error(`Server returned non-JSON response. Content-Type: ${contentType}. Body: ${text.substring(0, 100)}...`);
+    }
+  }
+  
+  try {
+    const data = await response.json();
+    console.log(`[${context}] Parsed JSON successfully:`, data);
+    return data;
+  } catch (error) {
+    console.error(`[${context}] Failed to parse JSON:`, error);
+    const text = await response.text();
+    console.error(`[${context}] Raw response:`, text);
+    throw new Error(`Failed to parse JSON response: ${error.message}`);
+  }
+}
+
 // Listen for extension installation or updates
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
@@ -47,6 +81,7 @@ async function handleTokenExtraction(request, sendResponse) {
 async function handleDocumentProcessing(request, sendResponse) {
   try {
     const { apiUrl, document } = request;
+    console.log('[Document Processing] Request:', { apiUrl, document });
     
     // Call API to add document
     const response = await fetch(`${apiUrl}/api/add-doc`, {
@@ -57,9 +92,10 @@ async function handleDocumentProcessing(request, sendResponse) {
       body: JSON.stringify(document)
     });
     
-    const data = await response.json();
+    const data = await safeJsonParse(response, 'Document Processing');
     sendResponse({ success: data.success, message: data.message });
   } catch (error) {
+    console.error('[Document Processing] Error:', error);
     sendResponse({ success: false, error: error.message });
   }
 }
