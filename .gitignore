@@ -24,3 +24,6 @@ Thumbs.db
 *.pdf
 tmp/
 temp/
+
+# But keep extension icons
+!chrome-extension/icons/*.png

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CTUMP PDF Downloader</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>CTUMP PDF Downloader</h1>
+    
+    <div class="section">
+      <h2>API Configuration</h2>
+      <div class="form-group">
+        <label for="apiUrl">API Server URL:</label>
+        <input type="text" id="apiUrl" placeholder="http://localhost:5000" value="http://localhost:5000">
+        <button id="testConnection">Test Connection</button>
+      </div>
+      <div id="connectionStatus" class="status"></div>
+    </div>
+
+    <div class="section">
+      <h2>Document Details</h2>
+      <div class="form-group">
+        <label for="viewerUrl">Viewer URL (optional):</label>
+        <input type="text" id="viewerUrl" placeholder="Paste CTUMP viewer URL here">
+        <button id="autoDetect">Auto Detect Token</button>
+      </div>
+      
+      <div class="form-group">
+        <label for="token">Token:</label>
+        <input type="text" id="token" placeholder="Enter token manually or auto-detect">
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="startPage">Start Page:</label>
+          <input type="number" id="startPage" value="1" min="1">
+        </div>
+        
+        <div class="form-group">
+          <label for="endPage">End Page:</label>
+          <input type="number" id="endPage" value="1" min="1">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="filename">Output Filename:</label>
+        <input type="text" id="filename" placeholder="document.pdf">
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Actions</h2>
+      <button id="addDocument" class="primary">Add Document to Queue</button>
+      <button id="startProcessing" class="success">Start Processing</button>
+      <button id="viewQueue">View Queue</button>
+    </div>
+
+    <div class="section">
+      <h2>Status</h2>
+      <div id="status" class="log"></div>
+    </div>
+
+    <div class="section">
+      <h2>Quick Actions</h2>
+      <button id="fillFromPage">Fill from Current Page</button>
+      <button id="clearForm">Clear Form</button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

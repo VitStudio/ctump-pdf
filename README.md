@@ -58,6 +58,20 @@ python ctsample.py
 
 > 📝 **Lưu ý**: `ctsample.py` là phiên bản web UI mới, cho phép truy cập qua trình duyệt. Xem chi tiết trong [CTSAMPLE_README.md](CTSAMPLE_README.md)
 
+**Chrome Extension (Manifest V3) - MỚI:**
+```bash
+# 1. Chạy API server trước
+python ctsample.py
+
+# 2. Cài đặt extension trong Chrome
+# - Mở chrome://extensions/
+# - Bật "Developer mode"
+# - Click "Load unpacked"
+# - Chọn thư mục chrome-extension/
+```
+
+> 🌐 **Extension**: Tiện ích Chrome giúp tải PDF dễ dàng từ trình duyệt. Xem hướng dẫn chi tiết trong [chrome-extension/README.md](chrome-extension/README.md)
+
 ## 📖 Hướng dẫn sử dụng
 
 ### 1. Thêm tài liệu
