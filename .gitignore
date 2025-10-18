@@ -25,5 +25,8 @@ Thumbs.db
 tmp/
 temp/
 
+# Build artifacts
+dist/
+
 # But keep extension icons
 !chrome-extension/icons/*.png
