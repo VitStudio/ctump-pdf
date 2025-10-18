@@ -30,3 +30,4 @@ dist/
 
 # But keep extension icons
 !chrome-extension/icons/*.png
+EXTENSION_SUMMARY.txt
