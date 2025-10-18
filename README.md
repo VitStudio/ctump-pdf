@@ -1,6 +1,12 @@
 # CTUMP PNG to PDF
 Tiện ích tải tài liệu từ trang sinh viên trường Đại học Y dược Cần Thơ.
 
+## 📦 Phiên bản có sẵn
+
+- **Desktop GUI** (`ct_gui.py`) - Ứng dụng Tkinter chạy trên máy tính
+- **Web Interface** (`ctsample.py`) - Giao diện web qua trình duyệt
+- **Chrome Extension** (`chrome-extension/`) - ⭐ **MỚI!** Tiện ích Chrome Manifest V3
+
 ## 📋 Mô tả
 Công cụ chuyển đổi tài liệu từ CTUMP DocImage sang PDF với giao diện đồ họa đơn giản và tự động phát hiện token. Hỗ trợ tải xuống bất đồng bộ với hiệu suất cao và tự động dọn dẹp cache.
 
@@ -57,6 +63,33 @@ python ctsample.py
 ```
 
 > 📝 **Lưu ý**: `ctsample.py` là phiên bản web UI mới, cho phép truy cập qua trình duyệt. Xem chi tiết trong [CTSAMPLE_README.md](CTSAMPLE_README.md)
+
+**Chrome Extension (Manifest V3) - MỚI:**
+```bash
+# 1. Chạy API server trước
+python ctsample.py
+
+# 2. Cài đặt extension trong Chrome
+# - Mở chrome://extensions/
+# - Bật "Developer mode"
+# - Click "Load unpacked"
+# - Chọn thư mục chrome-extension/
+```
+
+> 🌐 **Extension**: Tiện ích Chrome giúp tải PDF dễ dàng từ trình duyệt. Xem hướng dẫn chi tiết trong [chrome-extension/README.md](chrome-extension/README.md)
+
+## 🔍 So sánh các phiên bản
+
+| Tính năng | Desktop GUI | Web Interface | Chrome Extension |
+|-----------|-------------|---------------|------------------|
+| **Giao diện** | Tkinter | Browser | Chrome Popup |
+| **Cài đặt** | Không cần | Không cần | Load extension |
+| **Chạy server** | ❌ Không | ✅ Cần | ✅ Cần |
+| **Auto-detect token** | ✅ | ✅ | ✅ |
+| **Fill từ trang hiện tại** | ❌ | ❌ | ✅ |
+| **Manifest file** | ✅ | ❌ | ❌ |
+| **Multi-user** | ❌ | ✅ | ❌ |
+| **Phù hợp cho** | Cá nhân | Nhóm/Server | Sử dụng nhanh |
 
 ## 📖 Hướng dẫn sử dụng
 
