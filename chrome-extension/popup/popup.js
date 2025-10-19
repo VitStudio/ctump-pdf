@@ -22,11 +22,23 @@ async function safeJsonParse(response, context = '') {
     console.error(`[${context}] Expected JSON but got:`, contentType);
     console.error(`[${context}] Response body (first 500 chars):`, text.substring(0, 500));
     
+    // Create detailed error for UI display
+    const errorDetails = {
+      status: response.status,
+      statusText: response.statusText,
+      contentType: contentType,
+      responseBody: text
+    };
+    
     // Try to provide a helpful error message
     if (text.includes('<!doctype') || text.includes('<!DOCTYPE')) {
-      throw new Error(`Server returned HTML instead of JSON. Is the API server running at the correct URL? Response: ${text.substring(0, 100)}...`);
+      const error = new Error(`Server returned HTML instead of JSON. Is the API server running at the correct URL?`);
+      error.details = errorDetails;
+      throw error;
     } else {
-      throw new Error(`Server returned non-JSON response. Content-Type: ${contentType}. Body: ${text.substring(0, 100)}...`);
+      const error = new Error(`Server returned non-JSON response.`);
+      error.details = errorDetails;
+      throw error;
     }
   }
   
@@ -38,7 +50,15 @@ async function safeJsonParse(response, context = '') {
     console.error(`[${context}] Failed to parse JSON:`, error);
     const text = await response.text();
     console.error(`[${context}] Raw response:`, text);
-    throw new Error(`Failed to parse JSON response: ${error.message}`);
+    
+    const parseError = new Error(`Failed to parse JSON response: ${error.message}`);
+    parseError.details = {
+      status: response.status,
+      statusText: response.statusText,
+      contentType: contentType,
+      responseBody: text
+    };
+    throw parseError;
   }
 }
 
@@ -78,14 +98,22 @@ document.getElementById('testConnection').addEventListener('click', async () => 
     if (response.ok) {
       showStatus('Connection successful!', 'success');
       logMessage('✓ API server is reachable', 'success');
+      logMessage(`  ↳ Status: ${response.status} ${response.statusText}`, 'success');
     } else {
       showStatus(`Connection failed: ${response.status}`, 'error');
       logMessage(`✗ Server returned ${response.status}`, 'error');
+      logMessage(`  ↳ Status: ${response.status} ${response.statusText}`, 'error');
     }
   } catch (error) {
     console.error('[Test Connection] Connection error:', error);
     showStatus('Connection failed: ' + error.message, 'error');
-    logMessage('✗ Cannot reach API server. Make sure it is running.', 'error');
+    logDetailedError('Test Connection', error, {
+      url: `${apiUrl}/`,
+      status: error.details?.status,
+      statusText: error.details?.statusText,
+      contentType: error.details?.contentType,
+      responseBody: error.details?.responseBody
+    });
   }
 });
 
@@ -124,7 +152,13 @@ document.getElementById('autoDetect').addEventListener('click', async () => {
   } catch (error) {
     console.error('[Auto Detect] Error:', error);
     showStatus('Error: ' + error.message, 'error');
-    logMessage('✗ Failed to detect token: ' + error.message, 'error');
+    logDetailedError('Auto Detect Token', error, {
+      url: `${apiUrl}/api/detect-token`,
+      status: error.details?.status,
+      statusText: error.details?.statusText,
+      contentType: error.details?.contentType,
+      responseBody: error.details?.responseBody
+    });
   }
 });
 
@@ -188,7 +222,13 @@ document.getElementById('addDocument').addEventListener('click', async () => {
   } catch (error) {
     console.error('[Add Document] Error:', error);
     showStatus('Error: ' + error.message, 'error');
-    logMessage('✗ Failed to add document: ' + error.message, 'error');
+    logDetailedError('Add Document', error, {
+      url: `${apiUrl}/api/add-doc`,
+      status: error.details?.status,
+      statusText: error.details?.statusText,
+      contentType: error.details?.contentType,
+      responseBody: error.details?.responseBody
+    });
   }
 });
 
@@ -216,7 +256,13 @@ document.getElementById('startProcessing').addEventListener('click', async () =>
   } catch (error) {
     console.error('[Start Processing] Error:', error);
     showStatus('Error: ' + error.message, 'error');
-    logMessage('✗ Failed to start processing: ' + error.message, 'error');
+    logDetailedError('Start Processing', error, {
+      url: `${apiUrl}/api/start`,
+      status: error.details?.status,
+      statusText: error.details?.statusText,
+      contentType: error.details?.contentType,
+      responseBody: error.details?.responseBody
+    });
   }
 });
 
@@ -283,4 +329,30 @@ function logMessage(message, type = 'info') {
   if (lines.length > 20) {
     statusEl.textContent = lines.slice(0, 20).join('\n');
   }
+}
+
+// Enhanced logging function to display detailed error information in UI
+function logDetailedError(context, error, details = {}) {
+  const timestamp = new Date().toLocaleTimeString();
+  
+  // Log main error message
+  logMessage(`${context}: ${error.message}`, 'error');
+  
+  // Log individual details if provided
+  if (details.status) {
+    logMessage(`  ↳ Status: ${details.status} ${details.statusText || ''}`, 'error');
+  }
+  if (details.contentType) {
+    logMessage(`  ↳ Content-Type: ${details.contentType}`, 'error');
+  }
+  if (details.responseBody) {
+    const preview = details.responseBody.substring(0, 100);
+    logMessage(`  ↳ Response: ${preview}${details.responseBody.length > 100 ? '...' : ''}`, 'error');
+  }
+  if (details.url) {
+    logMessage(`  ↳ URL: ${details.url}`, 'error');
+  }
+  
+  // Also log to console for developers
+  console.error(`[${context}]`, error, details);
 }

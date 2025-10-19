@@ -24,11 +24,23 @@ async function safeJsonParse(response, context = '') {
     console.error(`[${context}] Expected JSON but got:`, contentType);
     console.error(`[${context}] Response body (first 500 chars):`, text.substring(0, 500));
     
+    // Create detailed error for passing back to popup
+    const errorDetails = {
+      status: response.status,
+      statusText: response.statusText,
+      contentType: contentType,
+      responseBody: text
+    };
+    
     // Try to provide a helpful error message
     if (text.includes('<!doctype') || text.includes('<!DOCTYPE')) {
-      throw new Error(`Server returned HTML instead of JSON. Is the API server running at the correct URL? Response: ${text.substring(0, 100)}...`);
+      const error = new Error(`Server returned HTML instead of JSON. Is the API server running at the correct URL?`);
+      error.details = errorDetails;
+      throw error;
     } else {
-      throw new Error(`Server returned non-JSON response. Content-Type: ${contentType}. Body: ${text.substring(0, 100)}...`);
+      const error = new Error(`Server returned non-JSON response.`);
+      error.details = errorDetails;
+      throw error;
     }
   }
   
@@ -40,7 +52,15 @@ async function safeJsonParse(response, context = '') {
     console.error(`[${context}] Failed to parse JSON:`, error);
     const text = await response.text();
     console.error(`[${context}] Raw response:`, text);
-    throw new Error(`Failed to parse JSON response: ${error.message}`);
+    
+    const parseError = new Error(`Failed to parse JSON response: ${error.message}`);
+    parseError.details = {
+      status: response.status,
+      statusText: response.statusText,
+      contentType: contentType,
+      responseBody: text
+    };
+    throw parseError;
   }
 }
 
@@ -106,7 +126,12 @@ async function handleDocumentProcessing(request, sendResponse) {
     sendResponse({ success: data.success, message: data.message });
   } catch (error) {
     console.error('[Document Processing] Error:', error);
-    sendResponse({ success: false, error: error.message });
+    // Send detailed error information back to the caller
+    sendResponse({ 
+      success: false, 
+      error: error.message,
+      details: error.details || {}
+    });
   }
 }
 
