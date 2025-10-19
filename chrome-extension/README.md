@@ -21,6 +21,8 @@ A Chrome extension for easily downloading documents from CTUMP DocImage as PDF f
    python ctsample.py
    # Server will start at http://localhost:5000
    ```
+   
+   **For Remote/Cloud Deployment**: See [RAILWAY.md](RAILWAY.md) for instructions on deploying the API server to Railway, which allows you to use the extension from anywhere without running a local server.
 
 ### Install Extension in Chrome
 

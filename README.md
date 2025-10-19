@@ -77,6 +77,8 @@ python ctsample.py
 ```
 
 > 🌐 **Extension**: Tiện ích Chrome giúp tải PDF dễ dàng từ trình duyệt. Xem hướng dẫn chi tiết trong [chrome-extension/README.md](chrome-extension/README.md)
+> 
+> 🚀 **Railway Deployment**: Muốn sử dụng extension từ xa không cần chạy server local? Xem hướng dẫn deploy lên Railway tại [chrome-extension/RAILWAY.md](chrome-extension/RAILWAY.md)
 
 ## 🔍 So sánh các phiên bản
 
@@ -84,11 +86,12 @@ python ctsample.py
 |-----------|-------------|---------------|------------------|
 | **Giao diện** | Tkinter | Browser | Chrome Popup |
 | **Cài đặt** | Không cần | Không cần | Load extension |
-| **Chạy server** | ❌ Không | ✅ Cần | ✅ Cần |
+| **Chạy server** | ❌ Không | ✅ Cần | ✅ Cần (local/Railway) |
 | **Auto-detect token** | ✅ | ✅ | ✅ |
 | **Fill từ trang hiện tại** | ❌ | ❌ | ✅ |
 | **Manifest file** | ✅ | ❌ | ❌ |
 | **Multi-user** | ❌ | ✅ | ❌ |
+| **Deploy to cloud** | ❌ | ✅ Railway/Heroku | ✅ Railway/Heroku |
 | **Phù hợp cho** | Cá nhân | Nhóm/Server | Sử dụng nhanh |
 
 ## 📖 Hướng dẫn sử dụng

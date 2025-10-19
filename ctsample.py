@@ -916,12 +916,18 @@ async def run_all_docs():
 
 # ------------------------------- Main -----------------------------------
 if __name__ == "__main__":
+    # Support Railway and other cloud platforms that use PORT environment variable
+    port = int(os.environ.get('PORT', 5000))
+    
     add_log("[INFO] CTUMP PDF Tool starting...")
-    add_log("[INFO] Open http://localhost:5000 in your browser")
+    add_log(f"[INFO] Server will run on port {port}")
     print("\n" + "="*60)
     print("🚀 CTUMP PDF Tool - Web Interface")
     print("="*60)
-    print("Open your browser and navigate to: http://localhost:5000")
+    if port == 5000:
+        print("Open your browser and navigate to: http://localhost:5000")
+    else:
+        print(f"Server running on port: {port}")
     print("Press Ctrl+C to stop the server")
     print("="*60 + "\n")
-    app.run(debug=False, host='0.0.0.0', port=5000, threaded=True)
+    app.run(debug=False, host='0.0.0.0', port=port, threaded=True)
