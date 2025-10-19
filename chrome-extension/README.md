@@ -47,6 +47,7 @@ A Chrome extension for easily downloading documents from CTUMP DocImage as PDF f
 1. **Click the Extension Icon** in Chrome toolbar
 2. **Configure API Server** (first time only):
    - Enter API URL (default: `http://localhost:5000`)
+   - For cloud deployments (Replit, Heroku, etc.), use your HTTPS URL (e.g., `https://your-app.replit.dev`)
    - Click "Test Connection" to verify
 
 3. **Add a Document**:
@@ -156,6 +157,7 @@ chrome-extension/
 - Check API URL in extension settings
 - Ensure no firewall blocking localhost:5000
 - **Note**: The server now includes CORS support for Chrome extensions (added in v1.3)
+- **For cloud deployments**: HTTPS origins (Replit, Heroku, etc.) are now supported
 
 #### Token Not Detected
 - Verify viewer URL is correct

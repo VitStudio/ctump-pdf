@@ -68,10 +68,10 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 # Enable CORS for Chrome extension support
-# Allow requests from chrome-extension:// origins and localhost for testing
+# Allow requests from chrome-extension:// origins, localhost, and HTTPS (for cloud deployments)
 CORS(app, resources={
     r"/api/*": {
-        "origins": ["chrome-extension://*", "http://localhost:*", "http://127.0.0.1:*"],
+        "origins": ["chrome-extension://*", "http://localhost:*", "http://127.0.0.1:*", "https://*"],
         "methods": ["GET", "POST", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type"]
     }
