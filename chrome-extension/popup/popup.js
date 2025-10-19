@@ -1,6 +1,40 @@
 // Popup JavaScript for CTUMP PDF Downloader Extension
 // Handles UI interactions and API calls
 
+// Helper function to safely parse JSON responses with proper error logging
+async function safeJsonParse(response, context = '') {
+  const contentType = response.headers.get('content-type');
+  
+  // Log response details for debugging
+  console.log(`[${context}] Response status:`, response.status, response.statusText);
+  console.log(`[${context}] Content-Type:`, contentType);
+  
+  // Check if response is actually JSON
+  if (!contentType || !contentType.includes('application/json')) {
+    const text = await response.text();
+    console.error(`[${context}] Expected JSON but got:`, contentType);
+    console.error(`[${context}] Response body (first 500 chars):`, text.substring(0, 500));
+    
+    // Try to provide a helpful error message
+    if (text.includes('<!doctype') || text.includes('<!DOCTYPE')) {
+      throw new Error(`Server returned HTML instead of JSON. Is the API server running at the correct URL? Response: ${text.substring(0, 100)}...`);
+    } else {
+      throw new Error(`Server returned non-JSON response. Content-Type: ${contentType}. Body: ${text.substring(0, 100)}...`);
+    }
+  }
+  
+  try {
+    const data = await response.json();
+    console.log(`[${context}] Parsed JSON successfully:`, data);
+    return data;
+  } catch (error) {
+    console.error(`[${context}] Failed to parse JSON:`, error);
+    const text = await response.text();
+    console.error(`[${context}] Raw response:`, text);
+    throw new Error(`Failed to parse JSON response: ${error.message}`);
+  }
+}
+
 // Load saved API URL on popup open
 document.addEventListener('DOMContentLoaded', async () => {
   const result = await chrome.storage.sync.get(['apiUrl']);
@@ -24,12 +58,15 @@ document.getElementById('apiUrl').addEventListener('change', async (e) => {
 document.getElementById('testConnection').addEventListener('click', async () => {
   const apiUrl = document.getElementById('apiUrl').value;
   logMessage('Testing connection...', 'info');
+  console.log('[Test Connection] Testing API at:', apiUrl);
   
   try {
     const response = await fetch(`${apiUrl}/`, {
       method: 'GET',
       mode: 'cors'
     });
+    
+    console.log('[Test Connection] Response received:', response.status, response.statusText);
     
     if (response.ok) {
       showStatus('Connection successful!', 'success');
@@ -39,6 +76,7 @@ document.getElementById('testConnection').addEventListener('click', async () => 
       logMessage(`✗ Server returned ${response.status}`, 'error');
     }
   } catch (error) {
+    console.error('[Test Connection] Connection error:', error);
     showStatus('Connection failed: ' + error.message, 'error');
     logMessage('✗ Cannot reach API server. Make sure it is running.', 'error');
   }
@@ -55,6 +93,7 @@ document.getElementById('autoDetect').addEventListener('click', async () => {
   
   const apiUrl = document.getElementById('apiUrl').value;
   logMessage('Auto-detecting token...', 'info');
+  console.log('[Auto Detect] Requesting token detection for URL:', viewerUrl);
   
   try {
     const response = await fetch(`${apiUrl}/api/detect-token`, {
@@ -65,7 +104,7 @@ document.getElementById('autoDetect').addEventListener('click', async () => {
       body: JSON.stringify({ viewer_url: viewerUrl })
     });
     
-    const data = await response.json();
+    const data = await safeJsonParse(response, 'Auto Detect Token');
     
     if (data.success && data.token) {
       document.getElementById('token').value = data.token;
@@ -76,8 +115,9 @@ document.getElementById('autoDetect').addEventListener('click', async () => {
       logMessage('✗ ' + (data.message || 'Token not found'), 'error');
     }
   } catch (error) {
+    console.error('[Auto Detect] Error:', error);
     showStatus('Error: ' + error.message, 'error');
-    logMessage('✗ Failed to detect token', 'error');
+    logMessage('✗ Failed to detect token: ' + error.message, 'error');
   }
 });
 
@@ -106,6 +146,7 @@ document.getElementById('addDocument').addEventListener('click', async () => {
   
   const apiUrl = document.getElementById('apiUrl').value;
   logMessage(`Adding document: ${filename}...`, 'info');
+  console.log('[Add Document] Request:', { token, startPage, endPage, filename });
   
   try {
     const response = await fetch(`${apiUrl}/api/add-doc`, {
@@ -121,7 +162,7 @@ document.getElementById('addDocument').addEventListener('click', async () => {
       })
     });
     
-    const data = await response.json();
+    const data = await safeJsonParse(response, 'Add Document');
     
     if (data.success) {
       showStatus('Document added to queue!', 'success');
@@ -138,8 +179,9 @@ document.getElementById('addDocument').addEventListener('click', async () => {
       logMessage('✗ ' + (data.message || 'Unknown error'), 'error');
     }
   } catch (error) {
+    console.error('[Add Document] Error:', error);
     showStatus('Error: ' + error.message, 'error');
-    logMessage('✗ Failed to add document', 'error');
+    logMessage('✗ Failed to add document: ' + error.message, 'error');
   }
 });
 
@@ -147,13 +189,14 @@ document.getElementById('addDocument').addEventListener('click', async () => {
 document.getElementById('startProcessing').addEventListener('click', async () => {
   const apiUrl = document.getElementById('apiUrl').value;
   logMessage('Starting processing...', 'info');
+  console.log('[Start Processing] Sending start request to:', apiUrl);
   
   try {
     const response = await fetch(`${apiUrl}/api/start`, {
       method: 'POST'
     });
     
-    const data = await response.json();
+    const data = await safeJsonParse(response, 'Start Processing');
     
     if (data.success) {
       showStatus('Processing started!', 'success');
@@ -164,8 +207,9 @@ document.getElementById('startProcessing').addEventListener('click', async () =>
       logMessage('✗ ' + (data.message || 'Unknown error'), 'error');
     }
   } catch (error) {
+    console.error('[Start Processing] Error:', error);
     showStatus('Error: ' + error.message, 'error');
-    logMessage('✗ Failed to start processing', 'error');
+    logMessage('✗ Failed to start processing: ' + error.message, 'error');
   }
 });
 
