@@ -1,0 +1,7 @@
+# The app auto-installs dependencies via _ensure() function
+# If this fails, create requirements.txt in repository root:
+httpx[http2]>=0.26
+img2pdf>=0.6.0
+pikepdf>=9.0
+flask>=2.0.0
+flask-cors>=3.0.0
