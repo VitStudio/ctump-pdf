@@ -21,6 +21,10 @@ A Chrome extension for easily downloading documents from CTUMP DocImage as PDF f
    python ctsample.py
    # Server will start at http://localhost:5000
    ```
+   
+   **For Remote/Cloud Deployment**: Deploy the API server to a cloud platform:
+   - [RAILWAY.md](RAILWAY.md) - Deploy to Railway (no credit card, automatic sleep after 15 min)
+   - [RENDER.md](RENDER.md) - Deploy to Render.com (free tier, 750 hours/month, sleeps after 15 min)
 
 ### Install Extension in Chrome
 
