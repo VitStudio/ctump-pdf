@@ -1,6 +1,13 @@
 // Popup JavaScript for CTUMP PDF Downloader Extension
 // Handles UI interactions and API calls
 
+// Helper function to normalize API URL by removing trailing slashes
+function normalizeApiUrl(url) {
+  if (!url) return url;
+  // Remove trailing slashes
+  return url.replace(/\/+$/, '');
+}
+
 // Helper function to safely parse JSON responses with proper error logging
 async function safeJsonParse(response, context = '') {
   const contentType = response.headers.get('content-type');
@@ -15,11 +22,23 @@ async function safeJsonParse(response, context = '') {
     console.error(`[${context}] Expected JSON but got:`, contentType);
     console.error(`[${context}] Response body (first 500 chars):`, text.substring(0, 500));
     
+    // Create detailed error for UI display
+    const errorDetails = {
+      status: response.status,
+      statusText: response.statusText,
+      contentType: contentType,
+      responseBody: text
+    };
+    
     // Try to provide a helpful error message
     if (text.includes('<!doctype') || text.includes('<!DOCTYPE')) {
-      throw new Error(`Server returned HTML instead of JSON. Is the API server running at the correct URL? Response: ${text.substring(0, 100)}...`);
+      const error = new Error(`Server returned HTML instead of JSON. Is the API server running at the correct URL?`);
+      error.details = errorDetails;
+      throw error;
     } else {
-      throw new Error(`Server returned non-JSON response. Content-Type: ${contentType}. Body: ${text.substring(0, 100)}...`);
+      const error = new Error(`Server returned non-JSON response.`);
+      error.details = errorDetails;
+      throw error;
     }
   }
   
@@ -31,7 +50,15 @@ async function safeJsonParse(response, context = '') {
     console.error(`[${context}] Failed to parse JSON:`, error);
     const text = await response.text();
     console.error(`[${context}] Raw response:`, text);
-    throw new Error(`Failed to parse JSON response: ${error.message}`);
+    
+    const parseError = new Error(`Failed to parse JSON response: ${error.message}`);
+    parseError.details = {
+      status: response.status,
+      statusText: response.statusText,
+      contentType: contentType,
+      responseBody: text
+    };
+    throw parseError;
   }
 }
 
@@ -47,6 +74,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (tab.url && tab.url.includes('ctump.edu.vn')) {
     logMessage('CTUMP page detected', 'info');
   }
+  
+  // Load recent documents from cache
+  await loadRecentDocuments();
 });
 
 // Save API URL when changed
@@ -56,7 +86,7 @@ document.getElementById('apiUrl').addEventListener('change', async (e) => {
 
 // Test API connection
 document.getElementById('testConnection').addEventListener('click', async () => {
-  const apiUrl = document.getElementById('apiUrl').value;
+  const apiUrl = normalizeApiUrl(document.getElementById('apiUrl').value);
   logMessage('Testing connection...', 'info');
   console.log('[Test Connection] Testing API at:', apiUrl);
   
@@ -71,14 +101,22 @@ document.getElementById('testConnection').addEventListener('click', async () => 
     if (response.ok) {
       showStatus('Connection successful!', 'success');
       logMessage('✓ API server is reachable', 'success');
+      logMessage(`  ↳ Status: ${response.status} ${response.statusText}`, 'success');
     } else {
       showStatus(`Connection failed: ${response.status}`, 'error');
       logMessage(`✗ Server returned ${response.status}`, 'error');
+      logMessage(`  ↳ Status: ${response.status} ${response.statusText}`, 'error');
     }
   } catch (error) {
     console.error('[Test Connection] Connection error:', error);
     showStatus('Connection failed: ' + error.message, 'error');
-    logMessage('✗ Cannot reach API server. Make sure it is running.', 'error');
+    logDetailedError('Test Connection', error, {
+      url: `${apiUrl}/`,
+      status: error.details?.status,
+      statusText: error.details?.statusText,
+      contentType: error.details?.contentType,
+      responseBody: error.details?.responseBody
+    });
   }
 });
 
@@ -91,7 +129,7 @@ document.getElementById('autoDetect').addEventListener('click', async () => {
     return;
   }
   
-  const apiUrl = document.getElementById('apiUrl').value;
+  const apiUrl = normalizeApiUrl(document.getElementById('apiUrl').value);
   logMessage('Auto-detecting token...', 'info');
   console.log('[Auto Detect] Requesting token detection for URL:', viewerUrl);
   
@@ -117,7 +155,13 @@ document.getElementById('autoDetect').addEventListener('click', async () => {
   } catch (error) {
     console.error('[Auto Detect] Error:', error);
     showStatus('Error: ' + error.message, 'error');
-    logMessage('✗ Failed to detect token: ' + error.message, 'error');
+    logDetailedError('Auto Detect Token', error, {
+      url: `${apiUrl}/api/detect-token`,
+      status: error.details?.status,
+      statusText: error.details?.statusText,
+      contentType: error.details?.contentType,
+      responseBody: error.details?.responseBody
+    });
   }
 });
 
@@ -144,7 +188,7 @@ document.getElementById('addDocument').addEventListener('click', async () => {
     return;
   }
   
-  const apiUrl = document.getElementById('apiUrl').value;
+  const apiUrl = normalizeApiUrl(document.getElementById('apiUrl').value);
   logMessage(`Adding document: ${filename}...`, 'info');
   console.log('[Add Document] Request:', { token, startPage, endPage, filename });
   
@@ -168,12 +212,25 @@ document.getElementById('addDocument').addEventListener('click', async () => {
       showStatus('Document added to queue!', 'success');
       logMessage(`✓ Added: ${filename} (pages ${startPage}-${endPage})`, 'success');
       
+      // Save document metadata to cache for quick prefetch
+      await saveDocumentToCache({
+        token: token,
+        startPage: startPage,
+        endPage: endPage,
+        filename: filename.endsWith('.pdf') ? filename : filename + '.pdf',
+        viewerUrl: document.getElementById('viewerUrl').value.trim(),
+        timestamp: Date.now()
+      });
+      
       // Clear form after successful add
       document.getElementById('token').value = '';
       document.getElementById('startPage').value = '1';
       document.getElementById('endPage').value = '1';
       document.getElementById('filename').value = '';
       document.getElementById('viewerUrl').value = '';
+      
+      // Reload recent documents list
+      await loadRecentDocuments();
     } else {
       showStatus('Failed to add document', 'error');
       logMessage('✗ ' + (data.message || 'Unknown error'), 'error');
@@ -181,13 +238,19 @@ document.getElementById('addDocument').addEventListener('click', async () => {
   } catch (error) {
     console.error('[Add Document] Error:', error);
     showStatus('Error: ' + error.message, 'error');
-    logMessage('✗ Failed to add document: ' + error.message, 'error');
+    logDetailedError('Add Document', error, {
+      url: `${apiUrl}/api/add-doc`,
+      status: error.details?.status,
+      statusText: error.details?.statusText,
+      contentType: error.details?.contentType,
+      responseBody: error.details?.responseBody
+    });
   }
 });
 
 // Start processing
 document.getElementById('startProcessing').addEventListener('click', async () => {
-  const apiUrl = document.getElementById('apiUrl').value;
+  const apiUrl = normalizeApiUrl(document.getElementById('apiUrl').value);
   logMessage('Starting processing...', 'info');
   console.log('[Start Processing] Sending start request to:', apiUrl);
   
@@ -209,13 +272,19 @@ document.getElementById('startProcessing').addEventListener('click', async () =>
   } catch (error) {
     console.error('[Start Processing] Error:', error);
     showStatus('Error: ' + error.message, 'error');
-    logMessage('✗ Failed to start processing: ' + error.message, 'error');
+    logDetailedError('Start Processing', error, {
+      url: `${apiUrl}/api/start`,
+      status: error.details?.status,
+      statusText: error.details?.statusText,
+      contentType: error.details?.contentType,
+      responseBody: error.details?.responseBody
+    });
   }
 });
 
 // View queue (open API server in new tab)
 document.getElementById('viewQueue').addEventListener('click', () => {
-  const apiUrl = document.getElementById('apiUrl').value;
+  const apiUrl = normalizeApiUrl(document.getElementById('apiUrl').value);
   chrome.tabs.create({ url: apiUrl });
 });
 
@@ -276,4 +345,119 @@ function logMessage(message, type = 'info') {
   if (lines.length > 20) {
     statusEl.textContent = lines.slice(0, 20).join('\n');
   }
+}
+
+// Enhanced logging function to display detailed error information in UI
+function logDetailedError(context, error, details = {}) {
+  const timestamp = new Date().toLocaleTimeString();
+  
+  // Log main error message
+  logMessage(`${context}: ${error.message}`, 'error');
+  
+  // Log individual details if provided
+  if (details.status) {
+    logMessage(`  ↳ Status: ${details.status} ${details.statusText || ''}`, 'error');
+  }
+  if (details.contentType) {
+    logMessage(`  ↳ Content-Type: ${details.contentType}`, 'error');
+  }
+  if (details.responseBody) {
+    const preview = details.responseBody.substring(0, 100);
+    logMessage(`  ↳ Response: ${preview}${details.responseBody.length > 100 ? '...' : ''}`, 'error');
+  }
+  if (details.url) {
+    logMessage(`  ↳ URL: ${details.url}`, 'error');
+  }
+  
+  // Also log to console for developers
+  console.error(`[${context}]`, error, details);
+}
+
+// Save document metadata to cache for quick prefetch
+async function saveDocumentToCache(docData) {
+  try {
+    // Get existing cached documents
+    const result = await chrome.storage.local.get(['recentDocuments']);
+    let recentDocs = result.recentDocuments || [];
+    
+    // Add new document to the beginning
+    recentDocs.unshift(docData);
+    
+    // Keep only the last 10 documents
+    recentDocs = recentDocs.slice(0, 10);
+    
+    // Save back to storage
+    await chrome.storage.local.set({ recentDocuments: recentDocs });
+    console.log('[Cache] Document metadata saved:', docData);
+  } catch (error) {
+    console.error('[Cache] Failed to save document:', error);
+  }
+}
+
+// Load recent documents from cache
+async function loadRecentDocuments() {
+  try {
+    const result = await chrome.storage.local.get(['recentDocuments']);
+    const recentDocs = result.recentDocuments || [];
+    
+    const container = document.getElementById('recentDocuments');
+    if (!container) return;
+    
+    if (recentDocs.length === 0) {
+      container.innerHTML = '<p style="color: #666; font-size: 13px; padding: 10px;">No recent documents</p>';
+      return;
+    }
+    
+    container.innerHTML = recentDocs.map((doc, index) => {
+      const date = new Date(doc.timestamp);
+      const timeAgo = getTimeAgo(doc.timestamp);
+      
+      return `
+        <div class="recent-doc-item" data-index="${index}">
+          <div class="recent-doc-info">
+            <strong>${doc.filename}</strong>
+            <span class="recent-doc-meta">Pages ${doc.startPage}-${doc.endPage} • ${timeAgo}</span>
+          </div>
+          <button class="prefetch-btn" data-index="${index}">Load</button>
+        </div>
+      `;
+    }).join('');
+    
+    // Add event listeners to load buttons
+    container.querySelectorAll('.prefetch-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const index = parseInt(e.target.getAttribute('data-index'));
+        await prefetchDocument(recentDocs[index]);
+      });
+    });
+    
+    console.log('[Cache] Loaded recent documents:', recentDocs.length);
+  } catch (error) {
+    console.error('[Cache] Failed to load recent documents:', error);
+  }
+}
+
+// Prefetch (load) a document from cache into the form
+async function prefetchDocument(doc) {
+  document.getElementById('token').value = doc.token;
+  document.getElementById('startPage').value = doc.startPage;
+  document.getElementById('endPage').value = doc.endPage;
+  document.getElementById('filename').value = doc.filename;
+  if (doc.viewerUrl) {
+    document.getElementById('viewerUrl').value = doc.viewerUrl;
+  }
+  
+  showStatus('Document loaded from cache', 'success');
+  logMessage(`✓ Loaded: ${doc.filename} (pages ${doc.startPage}-${doc.endPage})`, 'success');
+}
+
+// Helper function to get human-readable time ago
+function getTimeAgo(timestamp) {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  
+  if (seconds < 60) return 'just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+  return new Date(timestamp).toLocaleDateString();
 }
