@@ -74,6 +74,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (tab.url && tab.url.includes('ctump.edu.vn')) {
     logMessage('CTUMP page detected', 'info');
   }
+  
+  // Load recent documents from cache
+  await loadRecentDocuments();
 });
 
 // Save API URL when changed
@@ -209,12 +212,25 @@ document.getElementById('addDocument').addEventListener('click', async () => {
       showStatus('Document added to queue!', 'success');
       logMessage(`✓ Added: ${filename} (pages ${startPage}-${endPage})`, 'success');
       
+      // Save document metadata to cache for quick prefetch
+      await saveDocumentToCache({
+        token: token,
+        startPage: startPage,
+        endPage: endPage,
+        filename: filename.endsWith('.pdf') ? filename : filename + '.pdf',
+        viewerUrl: document.getElementById('viewerUrl').value.trim(),
+        timestamp: Date.now()
+      });
+      
       // Clear form after successful add
       document.getElementById('token').value = '';
       document.getElementById('startPage').value = '1';
       document.getElementById('endPage').value = '1';
       document.getElementById('filename').value = '';
       document.getElementById('viewerUrl').value = '';
+      
+      // Reload recent documents list
+      await loadRecentDocuments();
     } else {
       showStatus('Failed to add document', 'error');
       logMessage('✗ ' + (data.message || 'Unknown error'), 'error');
@@ -355,4 +371,93 @@ function logDetailedError(context, error, details = {}) {
   
   // Also log to console for developers
   console.error(`[${context}]`, error, details);
+}
+
+// Save document metadata to cache for quick prefetch
+async function saveDocumentToCache(docData) {
+  try {
+    // Get existing cached documents
+    const result = await chrome.storage.local.get(['recentDocuments']);
+    let recentDocs = result.recentDocuments || [];
+    
+    // Add new document to the beginning
+    recentDocs.unshift(docData);
+    
+    // Keep only the last 10 documents
+    recentDocs = recentDocs.slice(0, 10);
+    
+    // Save back to storage
+    await chrome.storage.local.set({ recentDocuments: recentDocs });
+    console.log('[Cache] Document metadata saved:', docData);
+  } catch (error) {
+    console.error('[Cache] Failed to save document:', error);
+  }
+}
+
+// Load recent documents from cache
+async function loadRecentDocuments() {
+  try {
+    const result = await chrome.storage.local.get(['recentDocuments']);
+    const recentDocs = result.recentDocuments || [];
+    
+    const container = document.getElementById('recentDocuments');
+    if (!container) return;
+    
+    if (recentDocs.length === 0) {
+      container.innerHTML = '<p style="color: #666; font-size: 13px; padding: 10px;">No recent documents</p>';
+      return;
+    }
+    
+    container.innerHTML = recentDocs.map((doc, index) => {
+      const date = new Date(doc.timestamp);
+      const timeAgo = getTimeAgo(doc.timestamp);
+      
+      return `
+        <div class="recent-doc-item" data-index="${index}">
+          <div class="recent-doc-info">
+            <strong>${doc.filename}</strong>
+            <span class="recent-doc-meta">Pages ${doc.startPage}-${doc.endPage} • ${timeAgo}</span>
+          </div>
+          <button class="prefetch-btn" data-index="${index}">Load</button>
+        </div>
+      `;
+    }).join('');
+    
+    // Add event listeners to load buttons
+    container.querySelectorAll('.prefetch-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const index = parseInt(e.target.getAttribute('data-index'));
+        await prefetchDocument(recentDocs[index]);
+      });
+    });
+    
+    console.log('[Cache] Loaded recent documents:', recentDocs.length);
+  } catch (error) {
+    console.error('[Cache] Failed to load recent documents:', error);
+  }
+}
+
+// Prefetch (load) a document from cache into the form
+async function prefetchDocument(doc) {
+  document.getElementById('token').value = doc.token;
+  document.getElementById('startPage').value = doc.startPage;
+  document.getElementById('endPage').value = doc.endPage;
+  document.getElementById('filename').value = doc.filename;
+  if (doc.viewerUrl) {
+    document.getElementById('viewerUrl').value = doc.viewerUrl;
+  }
+  
+  showStatus('Document loaded from cache', 'success');
+  logMessage(`✓ Loaded: ${doc.filename} (pages ${doc.startPage}-${doc.endPage})`, 'success');
+}
+
+// Helper function to get human-readable time ago
+function getTimeAgo(timestamp) {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  
+  if (seconds < 60) return 'just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+  return new Date(timestamp).toLocaleDateString();
 }
