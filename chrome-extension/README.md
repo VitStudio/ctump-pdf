@@ -155,6 +155,7 @@ chrome-extension/
 - Verify API server is running: `python ctsample.py`
 - Check API URL in extension settings
 - Ensure no firewall blocking localhost:5000
+- **Note**: The server now includes CORS support for Chrome extensions (added in v1.3)
 
 #### Token Not Detected
 - Verify viewer URL is correct
