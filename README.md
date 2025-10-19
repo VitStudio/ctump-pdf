@@ -78,7 +78,9 @@ python ctsample.py
 
 > 🌐 **Extension**: Tiện ích Chrome giúp tải PDF dễ dàng từ trình duyệt. Xem hướng dẫn chi tiết trong [chrome-extension/README.md](chrome-extension/README.md)
 > 
-> 🚀 **Railway Deployment**: Muốn sử dụng extension từ xa không cần chạy server local? Xem hướng dẫn deploy lên Railway tại [chrome-extension/RAILWAY.md](chrome-extension/RAILWAY.md)
+> 🚀 **Cloud Deployment**: Muốn sử dụng extension từ xa không cần chạy server local?
+> - [Railway Deployment](chrome-extension/RAILWAY.md) - Deploy lên Railway
+> - [Render Deployment](chrome-extension/RENDER.md) - Deploy lên Render.com
 
 ## 🔍 So sánh các phiên bản
 
@@ -86,12 +88,12 @@ python ctsample.py
 |-----------|-------------|---------------|------------------|
 | **Giao diện** | Tkinter | Browser | Chrome Popup |
 | **Cài đặt** | Không cần | Không cần | Load extension |
-| **Chạy server** | ❌ Không | ✅ Cần | ✅ Cần (local/Railway) |
+| **Chạy server** | ❌ Không | ✅ Cần | ✅ Cần (local/cloud) |
 | **Auto-detect token** | ✅ | ✅ | ✅ |
 | **Fill từ trang hiện tại** | ❌ | ❌ | ✅ |
 | **Manifest file** | ✅ | ❌ | ❌ |
 | **Multi-user** | ❌ | ✅ | ❌ |
-| **Deploy to cloud** | ❌ | ✅ Railway/Heroku | ✅ Railway/Heroku |
+| **Deploy to cloud** | ❌ | ✅ Railway/Render | ✅ Railway/Render |
 | **Phù hợp cho** | Cá nhân | Nhóm/Server | Sử dụng nhanh |
 
 ## 📖 Hướng dẫn sử dụng
