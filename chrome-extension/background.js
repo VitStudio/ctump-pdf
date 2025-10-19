@@ -3,6 +3,13 @@
 
 console.log('CTUMP PDF Downloader service worker started');
 
+// Helper function to normalize API URL by removing trailing slashes
+function normalizeApiUrl(url) {
+  if (!url) return url;
+  // Remove trailing slashes
+  return url.replace(/\/+$/, '');
+}
+
 // Helper function to safely parse JSON responses with proper error logging
 async function safeJsonParse(response, context = '') {
   const contentType = response.headers.get('content-type');
@@ -83,8 +90,11 @@ async function handleDocumentProcessing(request, sendResponse) {
     const { apiUrl, document } = request;
     console.log('[Document Processing] Request:', { apiUrl, document });
     
+    // Normalize API URL to prevent double slashes
+    const normalizedApiUrl = normalizeApiUrl(apiUrl);
+    
     // Call API to add document
-    const response = await fetch(`${apiUrl}/api/add-doc`, {
+    const response = await fetch(`${normalizedApiUrl}/api/add-doc`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

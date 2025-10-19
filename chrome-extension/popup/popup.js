@@ -1,6 +1,13 @@
 // Popup JavaScript for CTUMP PDF Downloader Extension
 // Handles UI interactions and API calls
 
+// Helper function to normalize API URL by removing trailing slashes
+function normalizeApiUrl(url) {
+  if (!url) return url;
+  // Remove trailing slashes
+  return url.replace(/\/+$/, '');
+}
+
 // Helper function to safely parse JSON responses with proper error logging
 async function safeJsonParse(response, context = '') {
   const contentType = response.headers.get('content-type');
@@ -56,7 +63,7 @@ document.getElementById('apiUrl').addEventListener('change', async (e) => {
 
 // Test API connection
 document.getElementById('testConnection').addEventListener('click', async () => {
-  const apiUrl = document.getElementById('apiUrl').value;
+  const apiUrl = normalizeApiUrl(document.getElementById('apiUrl').value);
   logMessage('Testing connection...', 'info');
   console.log('[Test Connection] Testing API at:', apiUrl);
   
@@ -91,7 +98,7 @@ document.getElementById('autoDetect').addEventListener('click', async () => {
     return;
   }
   
-  const apiUrl = document.getElementById('apiUrl').value;
+  const apiUrl = normalizeApiUrl(document.getElementById('apiUrl').value);
   logMessage('Auto-detecting token...', 'info');
   console.log('[Auto Detect] Requesting token detection for URL:', viewerUrl);
   
@@ -144,7 +151,7 @@ document.getElementById('addDocument').addEventListener('click', async () => {
     return;
   }
   
-  const apiUrl = document.getElementById('apiUrl').value;
+  const apiUrl = normalizeApiUrl(document.getElementById('apiUrl').value);
   logMessage(`Adding document: ${filename}...`, 'info');
   console.log('[Add Document] Request:', { token, startPage, endPage, filename });
   
@@ -187,7 +194,7 @@ document.getElementById('addDocument').addEventListener('click', async () => {
 
 // Start processing
 document.getElementById('startProcessing').addEventListener('click', async () => {
-  const apiUrl = document.getElementById('apiUrl').value;
+  const apiUrl = normalizeApiUrl(document.getElementById('apiUrl').value);
   logMessage('Starting processing...', 'info');
   console.log('[Start Processing] Sending start request to:', apiUrl);
   
@@ -215,7 +222,7 @@ document.getElementById('startProcessing').addEventListener('click', async () =>
 
 // View queue (open API server in new tab)
 document.getElementById('viewQueue').addEventListener('click', () => {
-  const apiUrl = document.getElementById('apiUrl').value;
+  const apiUrl = normalizeApiUrl(document.getElementById('apiUrl').value);
   chrome.tabs.create({ url: apiUrl });
 });
 
