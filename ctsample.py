@@ -42,10 +42,11 @@ def _ensure(pkgs: List[str]) -> None:
             subprocess.check_call([sys.executable, "-m", "pip", "install", p])
 
 # Install third-party deps if missing
-_ensure(["httpx[http2]>=0.26", "img2pdf>=0.6.0", "pikepdf>=9.0", "flask>=2.0.0"])
+_ensure(["httpx[http2]>=0.26", "img2pdf>=0.6.0", "pikepdf>=9.0", "flask>=2.0.0", "flask-cors>=3.0.0"])
 
 # ------------------------- Web Framework (Flask) -------------------------
 from flask import Flask, render_template_string, request, jsonify, send_file, redirect, url_for
+from flask_cors import CORS
 
 import httpx
 import img2pdf
@@ -65,6 +66,16 @@ RETRIABLE_STATUSES = {429, 500, 502, 503, 504}
 # ----------------------------- Web App State ----------------------------
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
+# Enable CORS for Chrome extension support
+# Allow requests from chrome-extension:// origins, localhost, and HTTPS (for cloud deployments)
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["chrome-extension://*", "http://localhost:*", "http://127.0.0.1:*", "https://*"],
+        "methods": ["GET", "POST", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 
 # Global state for the web app
 app_state = {
