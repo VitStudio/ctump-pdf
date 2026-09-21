@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EdgeCTUMP - Tài liệu CTUMP</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <div class="logo-box">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            <line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="9" y1="12" x2="13" y2="12"></line>
+          </svg>
+        </div>
+        <div>
+          <h1>EdgeCTUMP</h1>
+          <span class="sub">Tài liệu CTUMP</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-refresh-scan" class="btn-icon" title="Quét lại bài giảng">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+        <span class="badge-v3">Thư Viện Số</span>
+      </div>
+    </header>
+
+    <!-- Scan & Detection Card -->
+    <section class="card" id="detect-card">
+      <div class="card-header">
+        <span class="eyebrow" id="scan-label">TRẠNG THÁI BÀI GIẢNG</span>
+        <span class="live-dot" id="live-dot"></span>
+      </div>
+
+      <!-- State: Empty / Searching -->
+      <div id="status-empty" class="status-empty">
+        <div class="scanner-anim"></div>
+        <p id="empty-text">Đang kết nối bài giảng và kiểm tra số trang…</p>
+      </div>
+
+      <!-- State: Detected & Configurable -->
+      <div id="status-found" class="status-found" style="display: none;">
+        <!-- Lecture Title if extracted -->
+        <div class="lecture-title-box" id="lecture-title-box" style="display: none;">
+          <span class="lecture-name" id="disp-lecture-title">Bài giảng</span>
+        </div>
+
+        <div class="meta-row">
+          <div class="meta-item">
+            <span class="label">Token:</span>
+            <span class="mono-tag" id="disp-token">—</span>
+          </div>
+          <div class="meta-item">
+            <span class="label">Nguồn quét:</span>
+            <span class="detect-badge" id="disp-source">Tự động</span>
+          </div>
+        </div>
+
+        <!-- Prominent Total Page Banner -->
+        <div class="total-page-banner">
+          <div class="banner-content">
+            <span class="banner-sub">Tổng số trang tự động phát hiện:</span>
+            <span class="banner-num" id="disp-total-pages">0 trang</span>
+          </div>
+          <div class="auto-check-icon" title="Đã xác thực trang">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Real-time Live Inspection Monitor -->
+        <div class="monitor-card" id="monitor-card">
+          <div class="monitor-header">
+            <span class="eyebrow-accent">
+              <span class="pulse-dot"></span>
+              GIÁM SÁT HÌNH ẢNH TRỰC TIẾP
+            </span>
+            <span class="status-pill" id="preview-status">Đang nạp ảnh…</span>
+          </div>
+
+          <div class="monitor-frame">
+            <img id="live-thumb" alt="Xem trước slide bài giảng" style="display: none;">
+            <div id="thumb-placeholder" class="thumb-placeholder">
+              <div class="mini-spinner"></div>
+              <span>Đang kiểm tra dữ liệu ảnh…</span>
+            </div>
+            <div class="monitor-overlay" id="monitor-overlay" style="display: none;">
+              <span class="tag-page" id="preview-page-tag">Trang 1</span>
+              <span class="tag-dim" id="preview-dim-tag">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Range strip visualization -->
+        <div class="range-strip" id="range-strip"></div>
+
+        <!-- User Customization Inputs -->
+        <div class="input-grid">
+          <div class="field-group">
+            <label for="inp-start">Từ trang</label>
+            <input type="number" id="inp-start" min="1" step="1">
+          </div>
+          <div class="field-group">
+            <label for="inp-end">Đến trang</label>
+            <input type="number" id="inp-end" min="1" step="1">
+          </div>
+        </div>
+
+        <div class="field-group full-width">
+          <label for="inp-filename">Tên file lưu</label>
+          <input type="text" id="inp-filename" placeholder="CTUMP_TaiLieu.pdf">
+        </div>
+      </div>
+    </section>
+
+    <!-- Progress Card (visible during active download) -->
+    <section class="card progress-card" id="progress-card" style="display: none;">
+      <div class="progress-header">
+        <span class="eyebrow">TIẾN TRÌNH XUẤT PDF</span>
+        <span class="pct-text" id="progress-pct">0%</span>
+      </div>
+
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="progress-bar-fill"></div>
+      </div>
+
+      <div class="progress-stats">
+        <span id="progress-pages">Đang chuẩn bị luồng…</span>
+        <span id="progress-speed"></span>
+      </div>
+
+      <div class="notice-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span>Vui lòng <b>giữ popup mở</b> trong khi đang xuất tài liệu.</span>
+      </div>
+    </section>
+
+    <!-- Action Buttons -->
+    <div class="action-row">
+      <button id="btn-download" class="btn-primary" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span id="btn-text">Đang tìm bài giảng…</span>
+      </button>
+
+      <button id="btn-cancel" class="btn-secondary" style="display: none;">
+        Hủy tải
+      </button>
+    </div>
+
+    <!-- Alert / Message Banner -->
+    <div id="msg-box" class="msg-box" style="display: none;"></div>
+
+    <!-- Footer info -->
+    <footer class="footer">
+      <span>Đại học Y Dược Cần Thơ • Hỗ trợ học tập cá nhân</span>
+    </footer>
+  </div>
+
+  <script src="lib/pdf-lib.min.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
